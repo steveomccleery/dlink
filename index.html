@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html>
+	<head >
+		<meta http-equiv="Content-Language" content="en-us" />
+		<title>D-Link - DWM-222</title>
+		<link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<link rel="stylesheet" type="text/css" href="css/style.css" />
+		<link rel="stylesheet" type="text/css" href="css/controlPanel.css" />
+		<link rel="stylesheet" type="text/css" href="css/popSettings.css" />
+		<link rel="stylesheet" type="text/css" href="css/dataTable.css" />
+		<link rel="stylesheet" type="text/css" href="css/driveTree.css" />
+		<link rel="stylesheet" type="text/css" href="css/setupWizard.css" />
+		<link rel="stylesheet" type="text/css" href="css/dateTimePicker.css" />
+		<link rel="stylesheet" type="text/css" href="css/window.css" />
+		<script type="text/javascript" language="javascript" src="js/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript" language="javascript" src="js/json2.js"></script>
+        <script type="text/javascript" language="javascript" src="js/jquery.localize.min.js" ></script>
+        <script type="text/javascript" language="javascript" src="js/doT.js"></script>
+		<script type="text/javascript" language="javascript" src="js/mis.js"></script>
+		<script type="text/javascript" language="javascript" src="js/mgmt.js"></script>
+		<script type="text/javascript" language="javascript" src="js/table.js"></script>
+		<script type="text/javascript" language="javascript" src="js/textValidations.js"></script>
+		<script type="text/javascript" language="javascript" src="js/controlPanel.js"></script>
+		<script type="text/javascript" language="javascript" src="js/api/loginApi.js"></script>
+		<script type="text/javascript" language="javascript" src="js/api/internetApi.js"></script>
+		<script type="text/javascript" language="javascript" src="js/api/systemApi.js"></script>
+		<script type="text/javascript" language="javascript" src="js/api/applicationApi.js"></script>
+		<script type="text/javascript" language="javascript" src="js/api/wifiApi.js"></script>
+		<script type="text/javascript" language="javascript" src="js/internet.js"></script>
+		<script type="text/javascript" language="javascript" src="js/wifi.js"></script>
+		<script type="text/javascript" language="javascript" src="js/applications.js"></script>
+		<script type="text/javascript" language="javascript" src="js/system.js"></script>
+		<script type="text/javascript" language="javascript" src="js/setupWizard.js"></script>
+		<script type="text/javascript" language="javascript" src="js/driveTree.js"></script>
+		<script type="text/javascript" language="javascript" src="js/ipv4AddrValidations.js"></script>
+		<script type="text/javascript" language="javascript" src="js/macValidations.js"></script>
+		<script language="JavaScript" src="js/dateTimePicker.js" type="text/javascript"></script>        
+		<script type="text/javascript" language="javascript" src="js/jquery.autocomplete.min.js" ></script>
+		<script type="text/javascript" language="javascript" src="js/crypto-js.js" ></script> 
+		<script type="text/javascript" language="javascript" src="js/window.js"></script>			
+	<script type="text/javascript">
+        var global_AuthTimeout = 0;
+		var global_authDefaulTimeout = 300;
+        var global_AuthTimeoutHandler;
+        var global_up5sTimeoutHandler;
+        var global_nwUsageTimeoutHandler;
+        var global_lang = new Object();
+		var session_token=0;
+		var idleTime = 0;
+		var systemName="";
+		
+		//prevent clickjacking 
+		if(top.location!=self.location){
+			 top.location = self.location;
+		}
+		
+		$(function () {
+		var request= $.ajax(
+	{
+		type: "POST",
+		url: "cgi-bin/qcmap_auth",
+		data:
+		{
+			type: "get_language",
+			mask: "0"
+		},
+		dataType: "json"
+	});
+	request.done(function( responseData,textStatus, jqXHR )
+	{				
+		if(responseData.result == "SUCCESS")
+		{
+			if (responseData.web_language == "0") {
+				var opts = { language: "en", pathPrefix: "/lang"};
+
+			}		
+			else if (responseData.web_language == "1") {
+				var opts = { language: "hu", pathPrefix: "/lang"};
+			}	
+			else{
+				var opts = { language: "en", pathPrefix: "/lang"};
+			}	
+		}
+	opts.callback = function(data, defaultCallback) {
+	  global_lang = data;
+	  defaultCallback(data);
+	}
+	$("[data-localize]").localize("lang", opts);
+	getLanguage();		
+	});
+	request.fail(function(xhr, textStatus, errorThrown){
+		//dialogAlert(global_lang["login1"]["error"]);
+	});
+	request.fail(function(xhr, textStatus, errorThrown){
+		//dialogAlert(global_lang["login1"]["error"]);
+	});
+			var curr = new Date().getFullYear();
+			var opt = {}			
+			opt.datetime = {preset: 'datetime',minDate: new Date(2000,3,10,9,22),maxDate: new Date(2099,7,30,15,44),stepMinute: 1};
+			$('#tf1_setDateTime').val($('#tf1_setDateTimeValue').val());
+			$('#tf1_setDateTime').scroller('destroy').scroller(
+				$.extend(
+					opt["datetime"], { 					
+						mode: "scroller", 
+						display: "inline" 
+					}
+				)			
+			);			
+		});
+		function showKey(obj){
+            if(obj.checked) {
+               $('#tf1_preSharedkey').hide();
+			   $('#tf2_preSharedkey').show();
+            } else {
+               $('#tf2_preSharedkey').hide();
+			   $('#tf1_preSharedkey').show();
+            }
+        }
+function show_login_Key(obj){
+    if(obj.checked) {
+		$('#tf1_oldPassword').hide();
+		$('#tf2_oldPassword').show();
+		$('#tf1_password').hide();
+		$('#tf2_password').show();
+		$('#tf1_passwd').hide();
+		$('#tf2_passwd').show();			   
+		$('#tf1_cnfPassword').hide();
+		$('#tf2_cnfPassword').show();
+	} else {
+		$('#tf2_oldPassword').hide();
+		$('#tf1_oldPassword').show();
+		$('#tf2_password').hide();
+		$('#tf1_password').show();
+		$('#tf2_passwd').hide();
+		$('#tf1_passwd').show();			   
+		$('#tf2_cnfPassword').hide();
+		$('#tf1_cnfPassword').show();
+    }
+}
+		function onchangeValue(){
+			$('#tf1_setDateTimeValue').val($('#tf1_setDateTime').val());
+		}		
+	</script>
+	</head>
+	<body>
+		<div align="center" id="all" style="display:none;">
+			<div class="cpTop">
+				<div class="logoTop">
+					<div class="cpLogo" data-localize="logo.d-link-dwr" id="systemName">
+						DWM-222
+					</div>
+				</div>	
+
+                <div class="cpInfoBar" style="display:none;">
+					<p>
+						<span data-localize="login1.login_as"><!--Login as --></span><a href="#" onClick="openPopup(event,'tf1_popupSystemManagementDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupSystemManagementContent','controlPanel','systemManagementPopup.html', 'tf1_adminSettings','device_adminAccountOnload');" id="tf1_cpLoggedName" title="" ></a> 
+                        <span id="timer" style="display:none;"></span>
+					</p>
+					<a href="#" class="userLogout" id="tf1_cpLogout" data-localize="login1.logout"><!--Logout--></a>
+				</div>
+
+                <script language="javascript">
+                    /* Check cookie */
+                    if (getCookie("DWRLOGGEDUSER") == null) {
+						window.location = "login.html";                                         
+                    } else {
+                        document.getElementById("tf1_cpLoggedName").innerHTML = getCookie('DWRLOGGEDUSER');
+                    }
+                    if (getCookie("DWRLOGGEDSESSION") != null) {
+						session_token = getCookie('DWRLOGGEDSESSION');                                     
+                    } 					
+                </script>
+                	<div>
+				<nav>
+					<ul>
+						<li>
+							<a href="#" onClick="openPopup(event,'tf1_popupInternetDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupInternetContent','controlPanel','internetPopup.html', 'tf1_networkStatus','network_info');" data-localize="menu.internet"><!--Internet-->&nbsp;</a>						</li>
+				<!--  <li>
+							<a href="#" onClick="openPopup(event,'tf1_popupWiFiDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupWiFiContent','controlPanel','wifiPopup.html', 'tf1_wifiStatus','wifi_onloadStatus');" data-localize="menu.wifi-settings"><!--Wi-Fi Setting--&nbsp;</a>						</li>-->
+				  <li>
+							<a href="#" onClick="openPopup(event,'tf1_popupApplicationDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupApplicationContent','controlPanel','applicationPopup.html', 'tf1_applicationSettings','applicationSettings_onloadSmsSetup');" data-localize="menu.Applications"><!--Applications-->&nbsp;</a>						</li>
+				  <li>
+							<a href="#" onClick="openPopup(event,'tf1_popupSystemManagementDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupSystemManagementContent','controlPanel','systemManagementPopup.html', 'tf1_systemManagement','system_about');" data-localize="menu.system"><!--System-->&nbsp;</a>						</li>
+				  <!--<li>
+							<a href="#" onClick="openPopup(event,'tf1_popupHelpDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupHelpContent','controlPanel','helpPopup.html', 'tf1_generalRouter','help_Onload');" data-localize="menu.help"><!--Help--><!--&nbsp;</a></li>-->
+				  </ul>
+				</nav>
+			</div>	
+			</div>
+			<div class="cpMid">
+				<div class="divline">
+					&nbsp;
+				</div>
+				<div class="cpMainLeft">
+					<div>
+						<h1><a href="#" onClick="openPopup(event,'tf1_popupInternetDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupInternetContent','controlPanel','internetPopup.html', 'tf1_networkStatus','network_info');" data-localize="menu.internet"><!--Internet-->&nbsp;</a></h1>
+						<div>
+							<div id="tf1_tmpl_cpinternetinfo"></div>
+							<script id="cp_internetTemplate" type="text/x-dot-template">
+							<div class="cpInternet">
+								
+								<div class="cpOperator">
+									<p style="padding:0 0 0 10px;">
+										 {{! it.operator_name || ""}} 
+									</p>
+								{{ if(ui_config.Dyn_Status["wan_status"]["call_status"] == "connected") { }}
+									
+									{{var statuStr;}}
+									{{ if ( it.signal_level == "0") { }}
+										  {{statuStr="signal1";}}
+									{{ } else if( it.signal_level == "1") { }}	  
+										 {{statuStr="signal2";}}	
+									{{ } else if( it.signal_level == "2") { }}	  
+										 {{statuStr="signal3";}}	
+									{{ } else if( it.signal_level == "3") { }}	  
+										 {{statuStr="signal4";}}	
+									{{ } else if( it.signal_level == "4") { }}	  
+										 {{statuStr="signal5";}}	
+									{{ } else { }}
+										  {{statuStr="signal6";}}
+									{{ } }}
+								
+									{{var imodeType;}}
+									{{if(it.network_type == "2G" || it.network_type == "G" || it.network_type == "E") { }}
+										{{imodeType = "cpInternetMode1";}}
+									{{ } else if(it.network_type == "3G") { }}
+										{{imodeType = "cpInternetMode2";}}
+									{{ } else if(it.network_type == "LTE" || it.network_type == "4G") { }}
+										{{imodeType = "cpInternetMode";}}	
+									{{ } else { }}
+										{{imodeType = "";}}		
+									{{ } }}
+									
+									{{ } }}	
+
+									{{ if(ui_config.Dyn_Status["wan_status"]["call_status"] == "disconnected") { }}
+									
+									{{var statuStr;}}
+									{{ if ( it.signal_level == "0") { }}
+										  {{statuStr="signalGray1";}}
+									{{ } else if( it.signal_level == "1") { }}	  
+										 {{statuStr="signalGray2";}}	
+									{{ } else if( it.signal_level == "2") { }}	  
+										 {{statuStr="signalGray3";}}	
+									{{ } else if( it.signal_level == "3") { }}	  
+										 {{statuStr="signalGray4";}}	
+									{{ } else if( it.signal_level == "4") { }}	  
+										 {{statuStr="signalGray5";}}	
+									{{ } else { }}
+										  {{statuStr="signalGray6";}}
+									{{ } }}
+								
+									{{var imodeType;}}
+									{{if(it.network_type == "2G" || it.network_type == "G" || it.network_type == "E") { }}
+										{{imodeType = "cpInternetModeGray1";}}
+									{{ } else if(it.network_type == "3G") { }}
+										{{imodeType = "cpInternetModeGray2";}}
+									{{ } else if(it.network_type == "LTE" || it.network_type == "4G") { }}
+										{{imodeType = "cpInternetModeGray3";}}	
+									{{ } else { }}
+										{{imodeType = "";}}		
+									{{ } }}
+									
+									{{ } }}
+									<a href="#" class="{{=imodeType}}" onClick="openPopup(event,'tf1_popupInternetDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupInternetContent','controlPanel','internetPopup.html', 'tf1_connectModeSettings','internet_onloadConnmodeConfig');"></a>
+									<a href="#" class={{=statuStr}} onClick="openPopup(event,'tf1_popupInternetDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupInternetContent','controlPanel','internetPopup.html', 'tf1_networkStatus','network_info');"></a>														
+								</div>
+								<div class="cpTarriefUsage">
+										
+									<p>
+										<span class="textOne">{{=it.total_mb}} </span>
+										<strong class="alertClass" >{{=global_lang["cpsection"]["used"] || 'Used' }}</strong> 
+									</p>
+									
+									<p class="cpBreak2">&nbsp;
+										
+									</p>
+									
+									<p> {{ if ( it.packetdata_maxlimit != "") { }}
+									<span class="textTwo">
+										{{=it.packetdata_maxlimit}}</span><strong class="alertClass" >
+										{{=global_lang["cpsection"]["alert_me"] || "Alert me"}}
+										</strong>  {{} else { }}<!--a onclick="openPopup(event,'tf1_popupSystemManagementDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupSystemManagementContent','controlPanel','systemManagementPopup.html','tf1_networkStatisticsSettinsg','system_onloadNetworkStatsPacketData');" href="#" ><span class="textTwoSpan">{{=global_lang["cpsection"]["config_data_limit"] || "Configure Internet data limitation"}}</span</a--> {{ } }}	</p>
+								</div>
+							</div>
+							</script>
+                           
+                            
+                            
+						</div>
+						<p class="cpBreak1">&nbsp;
+							
+						</p>
+						<h1><a href="#" onClick="openPopup(event,'tf1_popupInternetDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupInternetContent','controlPanel','internetPopup.html', 'tf1_connectModeSettings','internet_onloadConnmodeConfig');" data-localize="cpsection.cnmode"><!--Connection Mode-->&nbsp;</a></h1>
+						<div id="tf1_tmpl_cp_connectionMode"></div>
+                        
+                        <script id="cp_connectionModeTemplate" type="text/x-dot-template">
+						
+							<div class="cpConnectionDetails">
+								{{var statuStr,statuVal,strConn;}}
+					   
+									{{  if(it.ipv4connection_status == "connected" ) { }}
+										 {{statuStr="enable-disable-on";}}
+										 {{statuVal="1";}}
+										 {{strConn = global_lang["cpsection"]["cp_connection"] || 'Connection' ;}}
+										
+									{{ } else if( it.ipv4connection_status == "disconnected") { }}
+										 {{statuStr="enable-disable-off";}}
+										 {{statuVal="0";}}
+										 {{strConn = global_lang["cpsection"]["cp_connection"] || 'Connection' ;}}
+									{{ } else if( it.ipv4connection_status == "connecting") { }}
+										 {{statuStr="enable-disable-on-noclick";}}
+										 {{statuVal="1";}}
+										 {{strConn = global_lang["cpsection"]["cp_connecting"] || 'Connecting...' ;;}}
+									{{ } else if( it.ipv4connection_status == "disconnecting") { }}
+										 {{statuStr="enable-disable-off-noclick";}}
+										 {{statuVal="0";}}	
+										 {{strConn = global_lang["cpsection"]["cp_dis_connecting"] || 'Disconnecting...' ;}}							  
+							   		{{ } }}									
+								<p class="cpCurrentConnOnOff" id="tf1_cp_connStr">
+									{{=strConn}}
+								</p>
+								 
+							   
+								<p class="cpCurrentConnOn">
+									<a class="{{=statuStr}}" alt="" 
+									id="tf1_cpConnect"></a>
+									<input type="hidden" value="{{=statuVal}}" name="" />
+								</p>
+								<div class="cpTimeStart" id="tf1_cpTime" style="display:none;">
+									<p class="cpTime">&nbsp;</p>
+								</div>
+								<div class="displayime" style="display:none;" id="tf1_displayTime">
+							      	{{! it.connectiontime || ""}}
+								</div>
+								
+								
+							</div>
+							<div class="cpCurrentConn">
+								<a class="connectionType{{ if ( it.autoconnection == "1" ) { }}Active{{}}}" alt="" id="tf1_cpAlwaysConnect" 
+								onClick="cp_connectionType('tf1_cpAlwaysConnect')"></a>
+								<input type="hidden" name="" value="0" />
+								<h2 id="tf1_cpConAlways">{{=global_lang["cpsection"]["always_connect"] || 'Always connect' }}</h2>
+							</div>
+							<div class="cpBreak2">
+								&nbsp;
+							</div>
+							 
+							<div class="cpCurrentConn">
+								<a class="connectionTypeActive{{ if ( it.autoconnection == "0" ) { }}Active{{}}}" alt="" id="tf1_cpManualConnect" 
+								onClick="cp_connectionType('tf1_cpManualConnect')"></a>
+								<input type="hidden" name="" value="0" />
+								<h2 id="tf1_cpConManual">{{=global_lang["cpsection"]["manual_connect"] || 'Manual connect' }}</h2>
+							</div>
+							<div class="cpCurrentConn">
+								<h2 style="color: {{ if ( it.autoconnection == "1" ) {}}#BFBFBF; {{}else{}}#0071C7;{{}}}padding: 0px 0 0 10px; width:120px;line-height:18px;" id="tf1_cpConDis">{{=global_lang["cpsection"]["con_dis"] || 'Connect / Disconnect' }}</h2>
+								<p class="cpconfigBtn" style="margin-top: 5px">
+									<a class="{{=statuStr}}" alt="" id="tf1_cpConnectDissconnect" {{ if ( it.autoconnection == "1" ) {}}style="display:none;"{{}}}></a>
+									<input type="hidden" name="" value="{{=statuVal}}" />
+								</p>
+							</div>						
+						</script>             
+                        
+						</div>
+					</div>
+				</div>
+				<div class="cpMainMid">
+					<div class="cpMainMid2">
+						<div id="tf1_tmpl_cpmaininfo"></div>
+						<script id="cp_mainTemplate" type="text/x-dot-template">
+						<div>
+							<div class="cpRouter">
+
+							</div>
+							<div class="break">
+								&nbsp;
+							</div>
+							/*<p style="overflow:hidden;">
+							
+								<a href="#" title="{{=it.SSIDname}}"  class="linkOne" onClick="openPopup(event,'tf1_popupWiFiDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupWiFiContent','controlPanel','wifiPopup.html', 'tf1_wifiSecuritySettings','wifi_onloadSecurity2point4');" href="#">
+								SSID: {{=it.SSIDname}}</a>
+							</p>*/
+							<p>
+								Web: {{=it.ip_addr}}
+								<!--<a onclick="openPopup(event,'tf1_popupApplicationDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupApplicationContent','controlPanel','applicationPopup.html', 'tf1_dhcpSettings','applicationSettings_onloadDhcpSetup')" href="#" class="linkOne">Web: {{=it.ip_addr}}</a>-->
+							</p>
+						</div>
+						</script>
+					</div>
+					<div class="cpSetupWizard">
+						<input type="submit" id="" value=" " data-localize="cpsection.cpwizard" class="cpWizardButtom" onClick="openSetupWizardPopup(event,'tf1_popupWizardDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupWizardContent','controlPanel','setupWizard.html', 'tf1_statusWizard','setup_onloadFn');" />
+					</div>
+				</div>
+				<div class="cpMainRight">
+										
+					<div>
+						<!--<h1><a href="#" onClick="openPopup(event,'tf1_popupWiFiDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupWiFiContent','controlPanel','wifiPopup.html', 'tf1_wifiStatus','wifi_onloadStatus');" data-localize="cpsection.wifi"><!--Wi-Fi--&nbsp;</a></h1>-->
+						<!--<div>-->
+							<!--<div id="tf1_tmpl_cpwifiinfo"></div>-->
+							<!--<script id="cp_wifiTemplate" type="text/x-dot-template">
+							/*<div class="cpSubHeading">
+								<div class="wifiIconn">
+									<a href="#" onClick="openPopup(event,'tf1_popupWiFiDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupWiFiContent','controlPanel','wifiPopup.html', 'tf1_wifiStatusDetails','wifi_onloadStatusDetails');">
+									{{var statuStr;}}
+									{{ if ( it.wifi_signal_level == "0") { }}
+										  {{statuStr="wifiSignal1";}}
+									{{ } else { }}
+										  {{statuStr="wifiSignal5";}}
+									{{ } }}
+									<span class="{{=statuStr}}"></span>
+									<div class="wifiICons"><p>
+										2.4 GHz
+									</p></div>
+									 </a>
+								</div>
+								<div class="cpWiFiIcon">
+									<a href="#" onClick="openPopup(event,'tf1_popupWiFiDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupWiFiContent','controlPanel','wifiPopup.html', 'tf1_wifiClients','wifi_onload2GClientsList','tf1_wifiClients');"> <div class="userIcons"></div>
+									<p>
+										{{=it.Clientlist}}
+									</p> </a>
+								</div>
+							</div>*/
+							</script>
+						</div>-->
+						
+						<!--<p class="cpBreak1">&nbsp;
+							
+						</p>-->
+						<h1><a href="#"  onClick="openPopup(event,'tf1_popupApplicationDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupApplicationContent','controlPanel','applicationPopup.html', 'tf1_applicationSettings','applicationSettings_onloadSmsSetup','tf1_appInbox');" id="tf1_cpInboxLink" data-localize="cpsection.msging"><!--Messaging--></a></h1>
+						<div>
+							<div id="tf1_tmpl_cpmessages"></div>
+							<script id="cp_messagesTemplate" type="text/x-dot-template">
+							<div class="cpSubHeading">
+								<div class="messaging">
+									<div class="inbox">
+										<a href="#" onClick="openPopup(event,'tf1_popupApplicationDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupApplicationContent','controlPanel','applicationPopup.html', 'tf1_applicationSettings','applicationSettings_onloadSmsSetup','tf1_appInbox');"> <div class="inboxIcon"></div>
+										<p>
+											{{=global_lang["application_popup"]["inbox"] || 'Inbox' }}
+											<br />
+											{{=it.inbox_tot}}
+										</p> </a>
+									</div>
+									<div class="drafts">
+										<a href="#" onClick="openPopup(event,'tf1_popupApplicationDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupApplicationContent','controlPanel','applicationPopup.html', 'tf1_applicationSettings','applicationSettings_onloadSmsSetup','tf1_appDraft');"> <div class="draftsIcon"></div>
+										<p>
+											{{=global_lang["application_popup"]["drafts"] || 'Drafts' }}
+											<br />
+											{{=it.drafts_tot}}
+										</p> </a>
+									</div>
+								</div>
+							</div>
+							</script>
+						</div>
+						<!--<p class="cpBreak1">&nbsp;
+							
+						</p>
+						<h1><a href="#" onClick="openPopup(event,'tf1_popupSystemManagementDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupSystemManagementContent','controlPanel','systemManagementPopup.html', 'tf1_advancedOptions','system_onloadAdvancedOptUpnp','tf1_systemPowerSaving');" data-localize="cpsection.pwrsave"><!--Power Saving--&nbsp;</a></h1> -->
+						<!--<div>
+                        	<!--<div id="tf1_tmpl_cppowersaving"></div>-->
+							<!--<script id="cp_powersavingTemplate" type="text/x-dot-template">
+							/*<a href="#" onClick="openPopup(event,'tf1_popupSystemManagementDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupSystemManagementContent','controlPanel','systemManagementPopup.html', 'tf1_advancedOptions','system_onloadAdvancedOptUpnp','tf1_systemPowerSaving');"><div class="powerSavingIcon"></div></a>
+							<div class="powerSavingLeft">
+
+							<div class="cpSubHeading">
+								<div  class="configTitleTwo" style="margin: 16px 0 0 0">
+										{{=global_lang["cpsection"]["suspend"] || 'Suspend' }} <span>{{ if(it.batteryidletime == "0") { }} {{=global_lang["common"]["off"] || 'OFF' }} {{ } else { }} {{=global_lang["common"]["on"] || 'ON' }} {{}}}</span>
+								</div>
+								
+							</div>
+							<div class="cpSubHeading">
+								<div  class="configTitleTwo">
+									{{=global_lang["cpsection"]["sleep"] || 'Deep Sleep' }} <span>{{ if(it.deepsleeptime == "0") { }} {{=global_lang["common"]["off"] || 'OFF' }}  {{ } else { }} {{=global_lang["common"]["on"] || 'ON' }} {{}}}</span>
+								</div>
+							</div>
+                            </div>*/
+                            </script>
+						</div>-->
+						<h1><a href="#" onClick="openPopup(event,'tf1_popupInternetDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupInternetContent','controlPanel','internetPopup.html', 'tf1_apnSettings','internet_onloadInternetApnConfig');" data-localize="internet_popup.apn"><!-- Settings-->&nbsp;</a></h1>
+						<div>
+							<div id="tf1_tmpl_apninfo"></div>
+							<script id="cp_apninfoTemplate" type="text/x-dot-template">
+								<div>
+									<div class="configRow" id="tf1_networkType_div_1" style="display:flex;">				
+										<label style="width:100px;" >{{=global_lang["internet_popup"]["apn"] || 'APN' }}</label>
+										<select id="tf1_networkType_1" style="width:205px;" onchange="internet_AutoApnChange_1()">
+										{{ var apnRecords = it["list"];}}
+											{{ for (var item in apnRecords) { }}
+												{{ if (apnRecords[item].apn != "" && apnRecords[item].apn) { }}				
+												<option  {{ if ( apnRecords[item].profile_index == it["connect_apn"]["profile_index"]) {}} selected {{ } }}value="{{=apnRecords[item].profile_index}}">{{=apnRecords[item].apn}}</option>
+												{{ } }}
+											{{ } }}
+										</select>
+									</div>
+									<div class="break" id="break_networkType_div">
+										&nbsp;
+									</div>
+									<div class="configRow" id="tf1_apn_div_1" style="display:flex;">
+										<label>{{=global_lang["internet_popup"]["apn"] || 'APN' }}</label>
+										<input type="text" id="tf1_apn_1" style="width:120px;" name="apn" 
+										value='{{! it["connect_apn"]["apn"] || "" }}' maxLength="32" />
+									</div>
+									<div class="break" id="break_apn_div">
+										&nbsp;
+									</div>	
+									<div style="float: right;">
+										<input type="button" value='{{=global_lang["common"]["apply"] || "Apply" }}'  class="btnSubmit" id="" onclick="return internet_ApnConfigValidate_1('tf1_frm_internetApnSettings')" />
+									</div>
+								</div>
+							</script>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="break">
+				&nbsp;
+			</div>
+			<div class="footer" align="center" data-localize="login1.footer">
+				&nbsp;
+			</div>
+		</div>
+	
+	<!-- all popup data starts here -->
+	<div id="tf1_overlay" class=""></div>
+	<div class="configDialog inputBg1" id="tf1_dialog" style="display:none"></div>
+	<!-- internet Settings Starts-->
+	<div id="tf1_popupInternetDialog" style="display:none">
+		<div id="tf1_popupInternetContent">
+			<div class="dialogMidArea">
+				<div class="topBg">
+					<div class="internetIcon">
+						&nbsp;
+					</div>
+					<h2 data-localize="internet_popup.int_pop_head">Internet Settings</h2>
+					<a  id="btnClose" href="#" class="close"></a>
+				</div>
+				<div class="popupContainer">
+					<div class="networkMenu">
+						<ul class="leftMenuOne leftMenu">
+							<li>
+								<a href="#" content-id="tf1_networkStatus" onClick="openLeftMenu(event,'button.networkStatus.internetPopup', 'tf1_dialog', 'tf1_popupInternetContent','tf1_networkStatus', 'internetPopup.html', 'network_info')" data-localize="internet_popup.network_status_left_tab">Network
+								<br />
+								Status</a>
+							</li>
+							<li>
+								<a href="#" content-id="tf1_apnSettings" onClick="openLeftMenu(event,'button.apnSettings.internetPopup', 'tf1_dialog','tf1_popupInternetContent', 'tf1_apnSettings', 'internetPopup.html', 'internet_onloadInternetApnConfig')" data-localize="internet_popup.apn-settings_left_tab">APN
+								<br />
+								Settings</a>
+							</li>
+							<li>
+								<a href="#" content-id="tf1_connectModeSettings" onClick="openLeftMenu(event,'button.connectModeSettings.internetPopup', 'tf1_dialog', 'tf1_popupInternetContent','tf1_connectModeSettings', 'internetPopup.html', 'internet_onloadConnmodeConfig')" data-localize="internet_popup.cnmodeSettings_left_tab">Connect Mode
+								<br />
+								Settings</a>
+							</li>
+							<li>
+								<a href="#" content-id="tf1_simCardPINLock" onClick="openLeftMenu(event,'button.connectModeSettings.internetPopup', 'tf1_dialog', 'tf1_popupInternetContent','tf1_simCardPINLock', 'internetPopup.html', 'internet_onloadInternetsimcardPinlock')" data-localize="internet_popup.simcard_pin_lock_left_tab">SIM Card
+								<br />
+								PIN Lock</a>
+							</li>
+							<li  class="last">
+								<a href="#" content-id="tf1_myOperator" onClick="openLeftMenu(event,'button.connectModeSettings.internetPopup', 'tf1_dialog', 'tf1_popupInternetContent','tf1_myOperator', 'internetPopup.html', 'internet_onloadInternetplmnConfig')" data-localize="internet_popup.my_operator(plmn)_left_tab">My Operator
+								<br />
+								(PLMN)</a>
+							</li>
+
+							<!--<li class="last">
+								<a href="#" content-id="tf1_routerLANSetting" onClick="openLeftMenu(event,'button.connectModeSettings.internetPopup', 'tf1_dialog', 'tf1_popupInternetContent','tf1_routerLANSetting', 'internetPopup.html', 'internet_onloadInternetlanConfig')" data-localize="internet_popup.Router_lan_settings_left_tab">Router
+								<br />
+								LAN Settings</a>
+							</li>-->
+						</ul>
+					</div>
+					<div class="networkContent rightContent">
+						<!-- popup content  starts -->
+						<div class="contentArea"></div>
+						<!-- popup content ends -->
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--Internet Settings ends -->
+	<!-- WiFi Settings Starts-->
+	<!--<div id="tf1_popupWiFiDialog" style="display:none">
+		<div id="tf1_popupWiFiContent">
+			<div class="dialogMidArea">
+				<div class="topBg">
+					<div class="wifiIcon">
+						&nbsp;
+					</div>
+					<h2 data-localize="wifi_popup.wifi-settings_head">Wi-Fi Settings</h2>
+					<a id="btnClose" href="#" class="close"></a>
+				</div>
+				<div class="popupContainer">
+					<div class="networkMenu">
+						<ul class="leftMenuTwo leftMenu">
+							<li>
+								<a href="#" content-id="tf1_wifiStatus" onClick="openLeftMenu(event,'button.wifiStatus.wifiPopup', 'tf1_dialog', 'tf1_popupWiFiContent','tf1_wifiStatus', 'wifiPopup.html', 'wifi_onloadStatus')" data-localize="wifi_popup.wifi_status_left_tab">Wi-Fi
+								<br />
+								Status</a>
+							</li>
+							<li>
+								<a href="#" content-id="tf1_wifiStatusDetails" onClick="openLeftMenu(event,'button.wifiStatus.wifiPopup', 'tf1_dialog', 'tf1_popupWiFiContent','tf1_wifiStatusDetails', 'wifiPopup.html', 'wifi_onloadStatusDetails')" data-localize="wifi_popup.wifi_control_left_tab">Wi-Fi <br />Control
+</a>
+							</li>
+							<li>
+								<a href="#" content-id="tf1_wifiClients" onClick="openLeftMenu(event,'button.wifiStatus.wifiPopup', 'tf1_dialog', 'tf1_popupWiFiContent','tf1_wifiClients', 'wifiPopup.html', 'wifi_onload2GClientsList')" data-localize="wifi_popup.wifi_clients_left_tab">Wi-Fi
+								<br />
+								Clients</a>
+							</li>
+							<li>
+								<a href="#" content-id="tf1_wifiSecuritySettings" onClick="openLeftMenu(event,'button.wifiSecuritySettings.wifiPopup', 'tf1_dialog','tf1_popupWiFiContent', 'tf1_wifiSecuritySettings', 'wifiPopup.html', 'wifi_onloadSecurity2point4')" data-localize="wifi_popup.wifi_sec_settings_left_tab">Wi-Fi Security
+								<br />
+								Settings</a>
+							</li>
+							<li class="last">
+								<a href="#" content-id="tf1_macFilter" onClick="openLeftMenu(event,'button.macFilter.wifiPopup', 'tf1_dialog', 'tf1_popupWiFiContent','tf1_macFilter', 'wifiPopup.html', 'wifi_onloadMacFilter')" data-localize="wifi_popup.mac_filter_left_tab">MAC
+								<br />
+								Filter</a>
+							</li>
+						</ul>
+					</div>
+					<div class="networkContent rightContent">
+						<!-- popup content starts --
+						<div class="contentArea"></div>
+						<!-- popup content ends --
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>-->
+	<!--WiFi Settings ends -->
+	<!-- Application Settings Starts-->
+	<div id="tf1_popupApplicationDialog" style="display:none">
+		<div id="tf1_popupApplicationContent">
+			<div class="dialogMidArea">
+				<div class="topBg">
+					<div class="applicationIcon">
+						&nbsp;
+					</div>
+					<h2 data-localize="application_popup.app_popup_head">Application Settings</h2>
+					<a id="btnClose" href="#" class="close"></a>
+				</div>
+				<div class="popupContainer">
+					<div class="networkMenu">
+						<ul class="leftMenuFour leftMenu">
+							<li>
+								<a href="#" content-id="tf1_shortMessageService" onClick="openLeftMenu(event,'button.applicationSettings.applicationPopup', 'tf1_dialog','tf1_popupApplicationContent', 'tf1_applicationSettings', 'applicationPopup.html', 'applicationSettings_onloadSmsSetup')" data-localize="application_popup.short_message_left_tab">Short
+								<br />
+								Messages</a>
+							</li>
+							<!--<li>
+								<a href="#" content-id="tf1_dhcpSettings"  onclick="openLeftMenu(event,'button.applicationSettings.applicationPopup', 'tf1_dialog','tf1_popupApplicationContent', 'tf1_dhcpSettings', 'applicationPopup.html', 'applicationSettings_onloadDhcpSetup')" data-localize="application_popup.dhcp_settings_left_tab">DHCP
+								<br />
+								Setting</a>
+							</li>-->
+							<li  class="last">
+								<a href="#" content-id="tf1_ussd"  onclick="openLeftMenu(event,'button.applicationSettings.applicationPopup', 'tf1_dialog','tf1_popupApplicationContent', 'tf1_ussd', 'applicationPopup.html', 'USSD_Onload')" data-localize="application_popup.ussd">USSD</a>
+							</li>
+							<!--<li class="last">
+								<a href="#" content-id="tf1_firewallSettings"  onclick="openLeftMenu(event,'button.macFilter.wifiPopup', 'tf1_dialog', 'tf1_popupApplicationContent','tf1_firewallSettings', 'applicationPopup.html', 'applicationSettings_onloadFirewallSettingsBlock')" data-localize="application_popup.firewall_setting_left_tab">Firewall
+								<br />
+								Setting</a>
+							</li>-->
+						</ul>
+					</div>
+					<div class="networkContent rightContent" id="networkContent_sim">
+						<!-- popup content  starts -->
+						<div class="contentArea"></div>
+						<!-- popup content ends -->
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--Application Settings ends -->
+	<!-- System Management Starts -->
+	<div id="tf1_popupSystemManagementDialog" style="display:none">
+		<div id="tf1_popupSystemManagementContent">
+			<div class="dialogMidArea">
+				<div class="topBg">
+					<div class="systemIcon">
+						&nbsp;
+					</div>
+					<h2 data-localize="system_popup.sys_popup_head">System Management</h2>
+					<a  id="btnClose" href="#" class="close"></a>
+				</div>
+				<div class="popupContainer">
+					<div class="networkMenu">
+						<ul class="leftMenuOne leftMenu">
+							<li>
+								<a href="#" content-id="tf1_systemManagement" onClick="openLeftMenu(event,'button.systemManagementPopup.systemManagementPopup', 'tf1_dialog', 'tf1_popupSystemManagementContent','tf1_systemManagement', 'systemManagementPopup.html', 'system_about')" data-localize="system_popup.sys_info_left_tab">System
+								<br />
+								Information</a>
+							</li>
+							<li>
+								<a href="#" content-id="tf1_adminSettings" onClick="openLeftMenu(event,'button.systemManagementPopup.systemManagementPopup', 'tf1_dialog', 'tf1_popupSystemManagementContent','tf1_adminSettings', 'systemManagementPopup.html', 'device_adminLangOnload')" data-localize="system_popup.admin_left_tab">Admin
+								<br />
+								Settings</a>
+							</li>
+							<li>
+								<a href="#" content-id="tf1_systemProfile" onClick="openLeftMenu(event,'button.wifiStatus.wifiPopup', 'tf1_dialog', 'tf1_popupSystemManagementContent','tf1_systemProfile', 'systemManagementPopup.html', 'systemManagement_onloadImportProfiles')" data-localize="system_popup.settings_profile_left_tab">Settings
+								<br />
+								Profile</a>
+							</li>
+							<!--<li>
+								<a href="#" content-id="tf1_firmwareUpgrade" onClick="openLeftMenu(event,'button.wifiStatus.wifiPopup', 'tf1_dialog', 'tf1_popupSystemManagementContent','tf1_firmwareUpgrade', 'systemManagementPopup.html', 'system_firmwareUpgradeOnLoad')" data-localize="system_popup.firmware_upgrade_left_tab">Firmware
+								<br />
+								Upgrade</a>
+							</li>-->
+							<li class="last">
+								<a href="#" content-id="tf1_networkStatisticsSettinsg" onClick="openLeftMenu(event,'button.wifiSecuritySettings.wifiPopup', 'tf1_dialog','tf1_popupSystemManagementContent', 'tf1_networkStatisticsSettinsg', 'systemManagementPopup.html', 'system_onloadNetworkStatistics')" data-localize="system_popup.net_stat_left_tab">Network
+								<br />
+								Statistics</a>
+							</li>
+							<!--<li class="last">
+								<a href="#" content-id="tf1_advancedOptions" onClick="openLeftMenu(event,'button.macFilter.wifiPopup', 'tf1_dialog', 'tf1_popupSystemManagementContent','tf1_advancedOptions', 'systemManagementPopup.html', 'system_onloadAdvancedOptUpnp')" data-localize="system_popup.advance_options_left_tab">Advanced
+								<br />
+								Options</a>
+							</li>-->
+						</ul>
+					</div>
+					<div class="networkContent rightContent">
+						<!-- popup content  starts -->
+						<div class="contentArea"></div>
+						<!-- popup content ends -->
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- System Management ends -->
+	<!-- Help Starts -->
+	<div id="tf1_popupHelpDialog" style="display:none">
+		<div id="tf1_popupHelpContent">
+			<div class="dialogMidArea">
+				<div class="topBg">
+					<div class="helpIcon">
+						&nbsp;
+					</div>
+					<h2 data-localize="menu.help">Help</h2>
+					<a id="btnClose" href="#" class="close"></a>
+				</div>
+				<div class="popupContainer">
+					<div class="networkMenu">
+						<ul class="leftMenuOne leftMenu">
+							<li>
+								<a href="#" content-id="tf1_generalRouter" onClick="openPopup(event,'tf1_popupHelpDialog','button.config.popSettings',-1,'tf1_dialog','tf1_popupHelpContent','controlPanel','helpPopup.html', 'tf1_generalRouter','help_Onload');" data-localize="menu.help">General
+								<br/>
+								Router</a>
+							</li>
+						</ul>
+					</div>
+					<div class="networkContent rightContent">
+						<!-- popup content  starts -->
+						<div class="contentArea"></div>
+						<!-- popup content ends -->
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Help ends -->
+	<!-- wizard form starts here -->
+	<div id="tf1_popupWizardDialog" style="display:none">
+		<div id="tf1_popupWizardContent">
+			<div class="dialogMidArea">
+				<div class="topBg">
+					<div class="setupWizardIcon">
+						&nbsp;
+					</div>
+					<h2 data-localize="setup_wizard.setup_wizard_head">Setup Wizard</h2>
+					<a id="btnClose" href="#" class="close"></a>
+				</div>
+				<div class="popupContainer">
+					<div class="setupWizard">
+						<!-- popup content  starts -->
+						<!-- popup content ends -->
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- wizard ends here -->
+	<!-- all popup data ends here -->
+	<!-- Error Block -->
+	<div id="tf1_overlay2" class=""></div>
+	<div class="errorPopup" id="tf1_error" style="display:none;"></div>
+	<div id="tf1_errorDialogTemplate" style="display:none">
+		<div>
+			<div class="errorHeading">
+				@@title@@
+			</div>
+			<div class="errorMessage">
+				@@msg@@
+			</div>
+			<div class="buttonsDiv2">
+				<input type="button" data-localize="common.ok" value="Ok" onClick="closeDialogAlert(event,'tf1_error')" class="btnSubmit" />
+			</div>
+		</div>
+	</div>
+	<!-- Informtion Block -->
+	<div class="errorPopup" id="tf1_information" style="display:none;"></div>
+	<div id="tf1_infoDialogTemplate" style="display:none">
+		<div>
+			<div class="informationHeading">
+				@@title@@
+			</div>
+			<div class="errorMessage">
+				@@msg@@
+			</div>
+			<div class="buttonsDiv2">
+				<input type="button" data-localize="common.ok" value="Ok" onClick="closeDialogAlert(event,'tf1_information')" class="btnSubmit" />
+			</div>
+		</div>
+	</div>
+<div id="tf1_hid_popup" style="display:none;">
+</div>
+</body>    
+</html>
